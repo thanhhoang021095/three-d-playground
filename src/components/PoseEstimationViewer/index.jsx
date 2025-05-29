@@ -1,50 +1,17 @@
-import React, { useRef, useState, useEffect, Suspense } from 'react';
+import React, { useRef, useState, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { useLoader, useFrame } from '@react-three/fiber';
+import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import './styles.css';
 
-function PoseModel({ url, frame, animationData, isPlaying }) {
+// Đường dẫn đến file mặc định (đặt trong thư mục public)
+const DEFAULT_MODEL_URL = 'store-shelf.glb';
+
+function Model({ url }) {
   const gltf = useLoader(GLTFLoader, url);
-  const mixer = useRef();
-  const modelRef = useRef();
-  
-  // Khởi tạo animation mixer nếu có animation trong file
-  useEffect(() => {
-    if (gltf.animations && gltf.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(gltf.scene);
-      const action = mixer.current.clipAction(gltf.animations[0]);
-      action.play();
-    }
-  }, [gltf]);
-  
-  // Áp dụng pose từ dữ liệu JSON nếu có
-  useEffect(() => {
-    if (animationData && animationData.frames && animationData.frames[frame]) {
-      const frameData = animationData.frames[frame];
-      
-      // Áp dụng dữ liệu cho các bone
-      gltf.scene.traverse((child) => {
-        if (child.isBone && frameData[child.name]) {
-          const { position, rotation, scale } = frameData[child.name];
-          child.position.set(position.x, position.y, position.z);
-          child.rotation.set(rotation.x, rotation.y, rotation.z);
-          if (scale) child.scale.set(scale.x, scale.y, scale.z);
-        }
-      });
-    }
-  }, [frame, animationData, gltf]);
-  
-  // Cập nhật animation khi isPlaying thay đổi
-  useFrame((_, delta) => {
-    if (mixer.current && isPlaying) {
-      mixer.current.update(delta);
-    }
-  });
-  
-  return <primitive ref={modelRef} object={gltf.scene} />;
+  return <primitive object={gltf.scene} />;
 }
 
 function Loader() {
@@ -55,137 +22,83 @@ function Loader() {
   );
 }
 
-export default function PoseEstimationViewer() {
-  const [modelData, setModelData] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(0);
+export default function AutoRiggingViewer() {
+  const [modelInfo, setModelInfo] = useState({ 
+    url: DEFAULT_MODEL_URL, 
+    type: 'default',
+    name: 'Mô hình mặc định'
+  });
+  const fileInputRef = useRef();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const fileInputRef = useRef();
-  const animationRef = useRef();
-  const lastTimeRef = useRef(0);
 
-  // Xử lý tải file lên
+  // Kiểm tra xem model hiện tại có phải là model mặc định không
+  const isDefaultModel = modelInfo.type === 'default';
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     setLoading(true);
     setError('');
-    setIsPlaying(false);
-    setCurrentFrame(0);
 
     const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    const validExtensions = ['.glb', '.gltf', '.fbx'];
     
-    if (extension === '.json') {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
-          
-          // Kiểm tra cấu trúc JSON
-          if (!data.modelUrl || !data.frames || !Array.isArray(data.frames)) {
-            throw new Error('Cấu trúc JSON không hợp lệ. Cần có modelUrl và frames');
-          }
-          
-          setModelData({
-            type: 'json',
-            animationData: data,
-            modelUrl: data.modelUrl
-          });
-          setLoading(false);
-        } catch (err) {
-          setError(`Lỗi JSON: ${err.message}`);
-          setLoading(false);
-        }
-      };
-      reader.onerror = () => {
-        setError('Lỗi khi đọc tệp');
-        setLoading(false);
-      };
-      reader.readAsText(file);
-    } else if (['.glb', '.gltf'].includes(extension)) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const blob = new Blob([e.target.result], { type: file.type });
-          const url = URL.createObjectURL(blob);
-          setModelData({
-            type: 'glb',
-            modelUrl: url
-          });
-          setLoading(false);
-        } catch (err) {
-          setError(`Lỗi khi xử lý tệp: ${err.message}`);
-          setLoading(false);
-        }
-      };
-      reader.onerror = () => {
-        setError('Lỗi khi đọc tệp');
-        setLoading(false);
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      setError('Vui lòng tải lên tệp hợp lệ (.json, .glb, .gltf)');
+    if (!validExtensions.includes(extension)) {
+      setError('Vui lòng tải lên tệp 3D hợp lệ (.glb, .gltf, .fbx)');
       setLoading(false);
+      return;
     }
-  };
 
-  // Vòng lặp animation
-  useEffect(() => {
-    if (!isPlaying || !modelData) return;
+    const reader = new FileReader();
     
-    const totalFrames = modelData.type === 'json' 
-      ? modelData.animationData.frames.length 
-      : 100;
-    
-    const frameRate = 30; // FPS
-    let animationFrameId;
-    
-    const animate = (time) => {
-      if (!lastTimeRef.current) lastTimeRef.current = time;
-      const delta = (time - lastTimeRef.current) / 1000;
-      
-      if (delta > 1 / frameRate) {
-        setCurrentFrame(prev => {
-          const nextFrame = (prev + 1) % totalFrames;
-          return nextFrame;
+    reader.onload = (e) => {
+      try {
+        const blob = new Blob([e.target.result], { type: file.type });
+        const url = URL.createObjectURL(blob);
+        
+        setModelInfo({ 
+          url, 
+          type: 'uploaded',
+          name: file.name
         });
-        lastTimeRef.current = time;
-      }
-      
-      animationFrameId = requestAnimationFrame(animate);
-    };
-    
-    animationFrameId = requestAnimationFrame(animate);
-    
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+        setLoading(false);
+      } catch (err) {
+        setError(`Lỗi khi xử lý tệp: ${err.message}`);
+        setLoading(false);
       }
     };
-  }, [isPlaying, modelData]);
-
-  // Xử lý thay đổi frame từ timeline
-  const handleFrameChange = (e) => {
-    setCurrentFrame(parseInt(e.target.value));
+    
+    reader.onerror = () => {
+      setError('Lỗi khi đọc tệp');
+      setLoading(false);
+    };
+    
+    reader.readAsArrayBuffer(file);
   };
 
-  // Xóa model và giải phóng bộ nhớ
   const clearModel = () => {
-    if (modelData) {
-      URL.revokeObjectURL(modelData.modelUrl);
+    // Chỉ giải phóng bộ nhớ nếu không phải model mặc định
+    if (modelInfo.type === 'uploaded') {
+      URL.revokeObjectURL(modelInfo.url);
     }
-    setModelData(null);
-    setIsPlaying(false);
-    setCurrentFrame(0);
-    lastTimeRef.current = 0;
+    // Quay về model mặc định
+    setModelInfo({ 
+      url: DEFAULT_MODEL_URL, 
+      type: 'default',
+      name: 'Mô hình mặc định'
+    });
   };
 
-  // Xử lý pause animation
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
+  // Giải phóng bộ nhớ khi component unmount
+  useEffect(() => {
+    return () => {
+      if (modelInfo.type === 'uploaded') {
+        URL.revokeObjectURL(modelInfo.url);
+      }
+    };
+  }, [modelInfo]);
 
   return (
     <div className="viewer-wrapper">
@@ -193,59 +106,41 @@ export default function PoseEstimationViewer() {
         <input
           type="file"
           ref={fileInputRef}
-          accept=".json,.glb,.gltf"
+          accept=".glb,.gltf,.fbx"
           onChange={handleFileUpload}
           style={{ display: 'none' }}
         />
         <button 
           onClick={() => fileInputRef.current.click()} 
           disabled={loading}
+          className="upload-button"
         >
-          {loading ? 'Đang tải...' : 'Tải lên dữ liệu Pose'}
+          {loading ? 'Đang tải...' : 'Tải lên mô hình'}
         </button>
-        {modelData && (
-          <>
-            <button 
-              onClick={togglePlayPause}
-              disabled={loading}
-              className={isPlaying ? 'pause-button' : 'play-button'}
-            >
-              {isPlaying ? (
-                <>
-                  <i className="icon-pause"></i> Tạm dừng
-                </>
-              ) : (
-                <>
-                  <i className="icon-play"></i> Phát
-                </>
-              )}
-            </button>
-            <button 
-              onClick={clearModel}
-              disabled={loading}
-              className="clear-button"
-            >
-              <i className="icon-clear"></i> Xóa
-            </button>
-          </>
+        {!isDefaultModel && (
+          <button 
+            onClick={clearModel}
+            disabled={loading}
+            className="clear-button"
+          >
+            Dùng mô hình mặc định
+          </button>
         )}
       </div>
 
       {error && <div className="error">{error}</div>}
 
+      <div className="model-info">
+        <span className="model-name">{modelInfo.name}</span>
+        <span className="model-type">{modelInfo.type === 'default' ? 'Mặc định' : 'Đã tải lên'}</span>
+      </div>
+
       <div className="canvas-container">
-        <Canvas camera={{ position: [0, 1.5, 5], fov: 50 }}>
+        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
           <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
           <Suspense fallback={<Loader />}>
-            {modelData && (
-              <PoseModel 
-                url={modelData.modelUrl} 
-                frame={currentFrame}
-                animationData={modelData.type === 'json' ? modelData.animationData : null}
-                isPlaying={isPlaying}
-              />
-            )}
+            <Model url={modelInfo.url} />
           </Suspense>
           <OrbitControls
             enablePan={true}
@@ -256,26 +151,6 @@ export default function PoseEstimationViewer() {
           <axesHelper args={[5]} />
         </Canvas>
       </div>
-
-      {modelData && (
-        <div className="timeline">
-          <input
-            type="range"
-            min="0"
-            max={modelData.type === 'json' ? modelData.animationData.frames.length - 1 : 100}
-            value={currentFrame}
-            onChange={handleFrameChange}
-            style={{ width: '100%' }}
-          />
-          <div className="frame-info">
-            <span>Frame: {currentFrame}</span>
-            {modelData.type === 'json' && (
-              <span>Tổng: {modelData.animationData.frames.length}</span>
-            )}
-            <span>Trạng thái: {isPlaying ? 'Đang phát' : 'Tạm dừng'}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
