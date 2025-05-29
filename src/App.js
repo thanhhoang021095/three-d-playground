@@ -1,25 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from 'react'
+import AutoRiggingViewer from './components/AutoRiggingViewer'
+import PoseEstimationViewer from './components/PoseEstimationViewer'
+import './App.css'
 
-function App() {
+export default function App() {
+  const [activeTab, setActiveTab] = useState('auto-rigging')
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div className="app-container">
+      <div className="tabs">
+        <button 
+          className={activeTab === 'auto-rigging' ? 'active' : ''}
+          onClick={() => setActiveTab('auto-rigging')}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+          Auto Rigging Viewer
+        </button>
+        <button 
+          className={activeTab === 'pose-estimation' ? 'active' : ''}
+          onClick={() => setActiveTab('pose-estimation')}
+        >
+          Pose Estimation Viewer
+        </button>
+      </div>
 
-export default App;
+      <div className="viewer-container">
+        {activeTab === 'auto-rigging' ? <AutoRiggingViewer /> : <PoseEstimationViewer />}
+      </div>
+    </div>
+  )
+}
