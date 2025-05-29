@@ -3,12 +3,11 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { useLoader } from '@react-three/fiber';
-import * as THREE from 'three';
 import './styles.css';
 
-const DEFAULT_MODEL_URL = 'store-shelf.glb.glb';
+const DEFAULT_MODEL_URL = 'store-shelf.glb';
 
-function Model({ url }) {
+function Model({ url = DEFAULT_MODEL_URL }) {
   const gltf = useLoader(GLTFLoader, url);
   return <primitive object={gltf.scene} />;
 }
