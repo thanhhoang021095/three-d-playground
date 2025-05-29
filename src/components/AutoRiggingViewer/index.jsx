@@ -8,6 +8,7 @@ import './styles.css';
 const DEFAULT_MODEL_URL = 'store-shelf.glb';
 
 function Model({ url = DEFAULT_MODEL_URL }) {
+  // Sử dụng key để force re-render khi url thay đổi
   const gltf = useLoader(GLTFLoader, url);
   return <primitive object={gltf.scene} />;
 }
@@ -24,14 +25,12 @@ export default function AutoRiggingViewer() {
   const [modelInfo, setModelInfo] = useState({ 
     url: DEFAULT_MODEL_URL, 
     type: 'default',
-    name: 'Mô hình mặc định'
+    name: 'Mô hình mặc định',
+    isActive: true
   });
   const fileInputRef = useRef();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Kiểm tra xem model hiện tại có phải là model mặc định không
-  const isDefaultModel = modelInfo.type === 'default';
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -56,10 +55,16 @@ export default function AutoRiggingViewer() {
         const blob = new Blob([e.target.result], { type: file.type });
         const url = URL.createObjectURL(blob);
         
+        // Giải phóng model cũ nếu có
+        if (modelInfo.url && modelInfo.url !== DEFAULT_MODEL_URL) {
+          URL.revokeObjectURL(modelInfo.url);
+        }
+        
         setModelInfo({ 
           url, 
           type: 'uploaded',
-          name: file.name
+          name: file.name,
+          isActive: true
         });
         setLoading(false);
       } catch (err) {
@@ -77,26 +82,42 @@ export default function AutoRiggingViewer() {
   };
 
   const clearModel = () => {
-    // Chỉ giải phóng bộ nhớ nếu không phải model mặc định
-    if (modelInfo.type === 'uploaded') {
+    // Giải phóng bộ nhớ nếu không phải model mặc định
+    if (modelInfo.url !== DEFAULT_MODEL_URL) {
       URL.revokeObjectURL(modelInfo.url);
     }
-    // Quay về model mặc định
+    
+    // Xóa hoàn toàn model (kể cả mặc định)
+    setModelInfo(prev => ({
+      ...prev,
+      isActive: false,
+      url: '' // Xóa URL để không render model
+    }));
+  };
+
+  const resetToDefault = () => {
+    // Giải phóng model đang có nếu không phải mặc định
+    if (modelInfo.url !== DEFAULT_MODEL_URL) {
+      URL.revokeObjectURL(modelInfo.url);
+    }
+    
+    // Reset về model mặc định
     setModelInfo({ 
       url: DEFAULT_MODEL_URL, 
       type: 'default',
-      name: 'Mô hình mặc định'
+      name: 'Mô hình mặc định',
+      isActive: true
     });
   };
 
-  // Giải phóng bộ nhớ khi component unmount
+  // Giải phóng bộ nhớ khi component unmount hoặc model thay đổi
   useEffect(() => {
     return () => {
-      if (modelInfo.type === 'uploaded') {
+      if (modelInfo.url && modelInfo.url !== DEFAULT_MODEL_URL) {
         URL.revokeObjectURL(modelInfo.url);
       }
     };
-  }, [modelInfo]);
+  }, [modelInfo.url]);
 
   return (
     <div className="viewer-wrapper">
@@ -115,13 +136,22 @@ export default function AutoRiggingViewer() {
         >
           {loading ? 'Đang tải...' : 'Tải lên mô hình'}
         </button>
-        {!isDefaultModel && (
+        
+        {modelInfo.isActive ? (
           <button 
             onClick={clearModel}
-            disabled={loading}
+            disabled={loading || !modelInfo.isActive}
             className="clear-button"
           >
-            Dùng mô hình mặc định
+            Xóa mô hình
+          </button>
+        ) : (
+          <button 
+            onClick={resetToDefault}
+            disabled={loading}
+            className="reset-button"
+          >
+            Hiện mô hình mặc định
           </button>
         )}
       </div>
@@ -129,21 +159,34 @@ export default function AutoRiggingViewer() {
       {error && <div className="error">{error}</div>}
 
       <div className="model-info">
-        <span className="model-name">{modelInfo.name}</span>
-        <span className="model-type">{modelInfo.type === 'default' ? 'Mặc định' : 'Đã tải lên'}</span>
+        {modelInfo.isActive ? (
+          <>
+            <span className="model-name">{modelInfo.name}</span>
+            <span className="model-type">
+              {modelInfo.type === 'default' ? 'Mặc định' : 'Đã tải lên'}
+            </span>
+          </>
+        ) : (
+          <span className="no-model">Không có mô hình nào được hiển thị</span>
+        )}
       </div>
 
       <div className="canvas-container">
         <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1} />
-          <Suspense fallback={<Loader />}>
-            <Model url={modelInfo.url} />
-          </Suspense>
+          
+          {modelInfo.isActive && modelInfo.url && (
+            <Suspense fallback={<Loader />}>
+              <Model key={modelInfo.url} url={modelInfo.url} />
+            </Suspense>
+          )}
+          
           <OrbitControls
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
+            enabled={modelInfo.isActive} // Vô hiệu hóa controls khi không có model
           />
           <gridHelper args={[10, 10]} />
           <axesHelper args={[5]} />
