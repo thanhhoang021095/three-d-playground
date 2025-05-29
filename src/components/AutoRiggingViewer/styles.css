@@ -24,6 +24,9 @@
   font-size: 15px;
   font-weight: 500;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .controls button:disabled {
@@ -53,6 +56,14 @@
   background: #ef5350;
 }
 
+.reset-button {
+  background: #4caf50;
+}
+
+.reset-button:hover:not(:disabled) {
+  background: #66bb6a;
+}
+
 .canvas-container {
   flex: 1;
   position: relative;
@@ -78,6 +89,11 @@
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 13px;
+}
+
+.no-model {
+  color: #ff9800;
+  font-style: italic;
 }
 
 .loader {
