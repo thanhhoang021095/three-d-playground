@@ -135,3 +135,33 @@
 .icon-clear::before {
   content: "✕";
 }
+
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-picker label {
+  font-size: 14px;
+  color: #ddd;
+}
+
+.color-picker input[type="color"] {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.color-picker input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}

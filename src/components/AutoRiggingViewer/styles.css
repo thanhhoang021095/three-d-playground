@@ -48,6 +48,14 @@
   background: #5a8bc5;
 }
 
+.color-toggle {
+  background: #9c27b0;
+}
+
+.color-toggle:hover:not(:disabled) {
+  background: #ab47bc;
+}
+
 .clear-button {
   background: #f44336;
 }
@@ -68,6 +76,43 @@
   flex: 1;
   position: relative;
   background: #121212;
+}
+
+.color-picker-panel {
+  padding: 15px;
+  background: #333;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid #444;
+}
+
+.color-picker-panel label {
+  color: #ddd;
+  font-size: 14px;
+}
+
+.color-picker-panel input[type="color"] {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.color-picker-panel button {
+  padding: 8px 15px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.color-picker-panel button:hover {
+  background: #ffa726;
 }
 
 .model-info {
