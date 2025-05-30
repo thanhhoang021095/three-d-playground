@@ -1,4 +1,4 @@
-import React, { useRef, useState, Suspense, useEffect, forwardRef } from 'react';
+import React, { useRef, useState, Suspense, forwardRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -10,28 +10,27 @@ import './styles.css';
 
 const DEFAULT_MODEL_URL = 'store-shelf.glb';
 
-// Sử dụng forwardRef để truy cập model từ component cha
-const Model = forwardRef(({ url, type }, ref) => {
-  let model;
-  
-  if (type === 'obj') {
-    const obj = useLoader(OBJLoader, url);
-    ref.current = obj; // Lưu tham chiếu
+const Model = forwardRef(({ url = DEFAULT_MODEL_URL, type }, ref) => {
+  const gltf = useLoader(GLTFLoader, type === 'glb' || type === 'gltf' ? url : null);
+  const obj = useLoader(OBJLoader, type === 'obj' ? url : null);
+  const fbx = useLoader(FBXLoader, type === 'fbx' ? url : null);
+
+  let model = null;
+
+  if (type === 'obj' && obj) {
+    ref.current = obj;
     model = <primitive object={obj} />;
-  } 
-  else if (type === 'fbx') {
-    const fbx = useLoader(FBXLoader, url);
-    ref.current = fbx; // Lưu tham chiếu
+  } else if (type === 'fbx' && fbx) {
+    ref.current = fbx;
     model = <primitive object={fbx} />;
-  }
-  else {
-    const gltf = useLoader(GLTFLoader, url);
-    ref.current = gltf.scene; // Lưu tham chiếu
+  } else if ((type === 'glb' || type === 'gltf') && gltf) {
+    ref.current = gltf.scene;
     model = <primitive object={gltf.scene} />;
   }
-  
+
   return model;
 });
+
 
 function Loader() {
   return (
