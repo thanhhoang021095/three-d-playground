@@ -35,7 +35,7 @@ const Model = forwardRef(({ url = DEFAULT_MODEL_URL, type }, ref) => {
 function Loader() {
   return (
     <Html center>
-      <div className="loader">Processing...</div>
+      <div className="loader">Upload Model</div>
     </Html>
   );
 }
