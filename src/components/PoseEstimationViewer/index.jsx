@@ -86,7 +86,7 @@ export default function PoseEstimationViewer() {
           
           // Kiểm tra cấu trúc JSON
           if (!data.modelUrl || !data.frames || !Array.isArray(data.frames)) {
-            throw new Error('Cấu trúc JSON không hợp lệ. Cần có modelUrl và frames');
+            throw new Error('"Invalid JSON structure. modelUrl and frames are required."');
           }
           
           setModelData({
@@ -96,12 +96,12 @@ export default function PoseEstimationViewer() {
           });
           setLoading(false);
         } catch (err) {
-          setError(`Lỗi JSON: ${err.message}`);
+          setError(`JSON Error: ${err.message}`);
           setLoading(false);
         }
       };
       reader.onerror = () => {
-        setError('Lỗi khi đọc tệp');
+        setError('Error reading file.');
         setLoading(false);
       };
       reader.readAsText(file);
@@ -117,17 +117,17 @@ export default function PoseEstimationViewer() {
           });
           setLoading(false);
         } catch (err) {
-          setError(`Lỗi khi xử lý tệp: ${err.message}`);
+          setError(`Error processing file: ${err.message}`);
           setLoading(false);
         }
       };
       reader.onerror = () => {
-        setError('Lỗi khi đọc tệp');
+        setError('Error reading file.');
         setLoading(false);
       };
       reader.readAsArrayBuffer(file);
     } else {
-      setError('Vui lòng tải lên tệp hợp lệ (.json, .glb, .gltf)');
+      setError('Please upload a valid file (.json, .glb, .gltf)');
       setLoading(false);
     }
   };
@@ -202,7 +202,7 @@ export default function PoseEstimationViewer() {
           onClick={() => fileInputRef.current.click()} 
           disabled={loading}
         >
-          {loading ? 'Đang tải...' : 'Tải lên dữ liệu Pose'}
+          {loading ? 'Uploading...' : 'Upload Pose Data'}
         </button>
         {modelData && (
           <>
@@ -213,11 +213,11 @@ export default function PoseEstimationViewer() {
             >
               {isPlaying ? (
                 <>
-                  <i className="icon-pause"></i> Tạm dừng
+                  <i className="icon-pause"></i> Pause
                 </>
               ) : (
                 <>
-                  <i className="icon-play"></i> Phát
+                  <i className="icon-play"></i> Play
                 </>
               )}
             </button>
@@ -226,7 +226,7 @@ export default function PoseEstimationViewer() {
               disabled={loading}
               className="clear-button"
             >
-              <i className="icon-clear"></i> Xóa
+              <i className="icon-clear"></i> Delete
             </button>
           </>
         )}
@@ -273,7 +273,7 @@ export default function PoseEstimationViewer() {
             {modelData.type === 'json' && (
               <span>Tổng: {modelData.animationData.frames.length}</span>
             )}
-            <span>Trạng thái: {isPlaying ? 'Đang phát' : 'Tạm dừng'}</span>
+            <span>Trạng thái: {isPlaying ? 'Playing' : 'Pause'}</span>
           </div>
         </div>
       )}

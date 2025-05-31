@@ -13,7 +13,7 @@ export default function App() {
           className={activeTab === 'auto-rigging' ? 'active' : ''}
           onClick={() => setActiveTab('auto-rigging')}
         >
-          Auto Rigging Viewer
+          3D Auto Rigging Viewer
         </button>
         <button 
           className={activeTab === 'pose-estimation' ? 'active' : ''}

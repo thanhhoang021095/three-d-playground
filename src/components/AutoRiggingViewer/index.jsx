@@ -35,7 +35,7 @@ const Model = forwardRef(({ url = DEFAULT_MODEL_URL, type }, ref) => {
 function Loader() {
   return (
     <Html center>
-      <div className="loader">Đang tải mô hình...</div>
+      <div className="loader">Processing...</div>
     </Html>
   );
 }
@@ -44,7 +44,7 @@ export default function AutoRiggingViewer() {
   const [modelInfo, setModelInfo] = useState({ 
     url: DEFAULT_MODEL_URL, 
     type: 'glb',
-    name: 'Mô hình mặc định',
+    name: 'Default Model',
     isActive: true
   });
   const [showColorPicker, setShowColorPicker] = useState(false);
