@@ -51,7 +51,7 @@ function PoseModel({ url = DEFAULT_ANIMATED_URL, frame, animationData, isPlaying
 function Loader() {
   return (
     <Html center>
-      <div className="loader">Đang tải mô hình...</div>
+      <div className="loader">Processing...</div>
     </Html>
   );
 }

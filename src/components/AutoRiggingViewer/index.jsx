@@ -170,7 +170,7 @@ export default function AutoRiggingViewer() {
           disabled={loading}
           className="upload-button"
         >
-          {loading ? 'Đang tải...' : 'Tải lên mô hình'}
+          {loading ? 'Loading...' : 'Processing...'}
         </button>
         
         {modelInfo.isActive && (
@@ -178,7 +178,7 @@ export default function AutoRiggingViewer() {
             onClick={() => setShowColorPicker(!showColorPicker)}
             className="color-toggle"
           >
-            {showColorPicker ? 'Ẩn màu' : 'Thay đổi màu'}
+            {showColorPicker ? 'Hide color' : 'Change color'}
           </button>
         )}
         
@@ -188,7 +188,7 @@ export default function AutoRiggingViewer() {
             disabled={loading}
             className="clear-button"
           >
-            Xóa mô hình
+            Clear Model
           </button>
         ) : (
           <button 
@@ -196,14 +196,14 @@ export default function AutoRiggingViewer() {
             disabled={loading}
             className="reset-button"
           >
-            Hiện mô hình mặc định
+            Show Default Model
           </button>
         )}
       </div>
 
       {showColorPicker && (
         <div className="color-picker-panel">
-          <label>Chọn màu mới:</label>
+          <label>Select new color:</label>
           <input 
             type="color" 
             defaultValue="#ff0000"
